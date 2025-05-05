@@ -2,9 +2,9 @@ name: Memory Server CI
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
 
 permissions:
   contents: read
@@ -37,8 +37,8 @@ jobs:
       - name: Run unit tests
         run: ./gradlew test
 
-#      - name: Run integration tests TODO: don't use the openai api key in intTest, create a profile.
-#        run: ./gradlew intTest
+      #      - name: Run integration tests TODO: don't use the openai api key in intTest, create a profile.
+      #        run: ./gradlew intTest
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -55,5 +55,14 @@ jobs:
             -Dquarkus.native.builder-image=graalvm \
             -Dquarkus.package.type=native \
             -Dquarkus.container-image.build=true \
-            -Dquarkus.container-image.image=${{ env.IMAGE_NAME }} \
+            -Dquarkus.container-image.image=${{ env.REGISTRY }}/${{ github.repository }}:${{ github.sha }} \
             -Dquarkus.container-image.push=true
+
+      - name: Mirror to Artifact Registry
+        run: |
+          docker pull ghcr.io/lucienbrule/memory-server:${{ github.sha }}
+          docker tag \
+            ghcr.io/lucienbrule/memory-server:${{ github.sha }} \
+            us-central1-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/memory-server-repo/memory-server:${{ github.sha }}
+          docker push \
+            us-central1-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/memory-server-repo/memory-server:${{ github.sha }}

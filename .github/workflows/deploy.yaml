@@ -40,4 +40,4 @@ jobs:
         with:
           service: memory-server
           region: us-central1
-          image: ghcr.io/lucienbrule/memory-server:${{ github.sha }}
+          image: us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/memory-server-repo/memory-server:${{ github.sha }}
