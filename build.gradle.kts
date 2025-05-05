@@ -35,6 +35,7 @@ dependencies {
     implementation("com.google.protobuf:protobuf-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("io.quarkus:quarkus-rest-client-jackson")
+    implementation("io.quarkus:quarkus-container-image-docker")
     testImplementation("io.quarkiverse.langchain4j:quarkus-langchain4j-core")
     testImplementation("dev.langchain4j:langchain4j-embeddings-all-minilm-l6-v2-q:1.0.0-beta3")
     testImplementation("io.quarkiverse.langchain4j:quarkus-langchain4j-qdrant:0.27.0.CR1")
