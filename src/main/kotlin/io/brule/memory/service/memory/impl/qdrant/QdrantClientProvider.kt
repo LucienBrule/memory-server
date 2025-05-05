@@ -1,4 +1,4 @@
-package io.brule.memory.service.memory.impl
+package io.brule.memory.service.memory.impl.qdrant
 
 import io.brule.memory.config.MemoryConfig
 import io.grpc.ManagedChannel

@@ -1,4 +1,4 @@
-package io.brule.memory.service.embed.impl
+package io.brule.memory.service.embed.impl.oai
 
 import io.brule.memory.dto.OpenAiEmbeddingRequest
 import io.brule.memory.dto.OpenAiEmbeddingResponse

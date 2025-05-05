@@ -30,8 +30,8 @@ data class MemoryRecallResponse(
  * Response returned after storing a new memory.
  */
 data class MemoryRememberResponse(
-    @JsonProperty("memory")
-    val memory: MemoryDto
+    @JsonProperty("acknowledged")
+    val acknowledged: Boolean = false,
 )
 
 /**

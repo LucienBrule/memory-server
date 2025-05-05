@@ -13,15 +13,10 @@ plugins {
     kotlin("plugin.allopen") version "2.1.20"
     kotlin("plugin.serialization") version "2.0.21"
     id("io.quarkus")
-//    id("org.kordamp.gradle.jandex") version "1.0.0"
-//    id("com.google.protobuf") version "0.9.5"
+    idea
 }
 
-// -- disable jandex indexing for kotlinx-serialization serializer classes --
-//tasks.named("jandex") {
-//    // turn off Jandex for our Kotlin-serialization generated serializers
-//    enabled = false
-//}
+
 
 repositories {
     mavenCentral()
@@ -40,14 +35,67 @@ dependencies {
     implementation("com.google.protobuf:protobuf-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("io.quarkus:quarkus-rest-client-jackson")
+    testImplementation("io.quarkiverse.langchain4j:quarkus-langchain4j-core")
+    testImplementation("dev.langchain4j:langchain4j-embeddings-all-minilm-l6-v2-q:1.0.0-beta3")
+    testImplementation("io.quarkiverse.langchain4j:quarkus-langchain4j-qdrant:0.27.0.CR1")
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.rest-assured:rest-assured")
 }
+sourceSets {
+    create("intTest") {
+        val mainOutput = sourceSets["main"].output
+        val testOutput = sourceSets["test"].output
+        val testRuntime = sourceSets["test"].runtimeClasspath
+        compileClasspath += mainOutput + testOutput + testRuntime
+        runtimeClasspath += output + compileClasspath
+    }
+    create("e2eTest") {
+        compileClasspath += sourceSets.main.get().output
+        runtimeClasspath += sourceSets.main.get().output
+    }
+}
 
+configurations {
+    getByName("intTestImplementation") {
+        extendsFrom(configurations.testImplementation.get())
+    }
+    getByName("intTestRuntimeOnly") {
+        extendsFrom(configurations.testRuntimeOnly.get())
+    }
+    getByName("e2eTestImplementation") {
+        extendsFrom(configurations.testImplementation.get())
+    }
+    getByName("e2eTestRuntimeOnly") {
+        extendsFrom(configurations.testRuntimeOnly.get())
+    }
+}
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+tasks.register<Test>("intTest") {
+    group = "verification"
+    description = "Runs integration tests"
+
+    testClassesDirs = sourceSets["intTest"].output.classesDirs
+    classpath = sourceSets["intTest"].runtimeClasspath
+    systemProperty("build.output.directory", "build")
+    systemProperty("quarkus.profile", "intTest")
+}
+
+tasks.register<Test>("e2eTest") {
+    group = "verification"
+    description = "Runs e2e tests"
+
+    val quarkusBuild = tasks.getByName("quarkusBuild")
+    dependsOn(quarkusBuild)
+
+    testClassesDirs = sourceSets["e2eTest"].output.classesDirs
+    classpath = sourceSets["e2eTest"].runtimeClasspath
+
+    systemProperty("build.output.directory", "build")
+}
+
+idea.module {
+    testSources.from(sourceSets["intTest"].kotlin.srcDirs)
+    testSources.from(sourceSets["e2eTest"].kotlin.srcDirs)
 }
 
 java {
@@ -71,35 +119,8 @@ allOpen {
     annotation("jakarta.persistence.Entity")
     annotation("io.quarkus.test.junit.QuarkusTest")
 }
-val protobufVersion = "3.25.5"
-val grpcVersion = "1.3.0"
-//protobuf {
-//    protoc { artifact = "com.google.protobuf:protoc:$protobufVersion" }
-//
-//    plugins {
-//        id("grpc") { artifact = "io.grpc:protoc-gen-grpc-java:$grpcVersion" }
-//    }
-//
-//    generateProtoTasks {
-//        ofSourceSet("main").forEach { task ->
-//            task.plugins {
-//                id("grpc") // generates the gRPC stubs
-//            }
-//
-//            task.builtins{
-//                java{
-//                    option("java_multiple_files=true")
-//                }
-//                id("kotlin")
-//            }
-//        }
-//    }
-//}
-
 
 quarkus{
-
-//    quarkusBuildProperties.put("quarkus.grpc.codegen.proto-directory", "${project.projectDir}/src/main/proto")
     setFinalName("memory-server")
 }
 

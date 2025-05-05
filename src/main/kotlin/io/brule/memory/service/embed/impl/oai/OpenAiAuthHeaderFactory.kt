@@ -1,11 +1,9 @@
-package io.brule.memory.service.embed.impl
+package io.brule.memory.service.embed.impl.oai
 
 import io.brule.memory.config.MemoryConfig
 import jakarta.enterprise.context.ApplicationScoped
-import jakarta.inject.Inject
 import jakarta.ws.rs.core.MultivaluedHashMap
 import jakarta.ws.rs.core.MultivaluedMap
-import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.eclipse.microprofile.rest.client.ext.ClientHeadersFactory
 
 @ApplicationScoped

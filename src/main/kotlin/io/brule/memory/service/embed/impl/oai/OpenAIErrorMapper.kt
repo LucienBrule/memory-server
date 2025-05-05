@@ -1,4 +1,4 @@
-package io.brule.memory.service.embed.impl
+package io.brule.memory.service.embed.impl.oai
 
 import jakarta.ws.rs.core.Response
 import jakarta.ws.rs.ext.Provider

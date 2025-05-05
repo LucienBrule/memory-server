@@ -1,4 +1,4 @@
-package io.brule.memory.service.memory.impl
+package io.brule.memory.service.memory.impl.qdrant
 
 import io.brule.memory.config.MemoryConfig
 import io.grpc.Status
@@ -7,7 +7,13 @@ import io.quarkus.runtime.StartupEvent
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.event.Observes
 import org.jboss.logging.Logger
-import qdrant.client.grpc.collections.*
+import qdrant.client.grpc.collections.CollectionsGrpc
+import qdrant.client.grpc.collections.CreateCollection
+import qdrant.client.grpc.collections.Distance
+import qdrant.client.grpc.collections.HnswConfigDiff
+import qdrant.client.grpc.collections.VectorParams
+import qdrant.client.grpc.collections.VectorParamsMap
+import qdrant.client.grpc.collections.VectorsConfig
 
 @ApplicationScoped
 class QdrantCollectionInitializer(

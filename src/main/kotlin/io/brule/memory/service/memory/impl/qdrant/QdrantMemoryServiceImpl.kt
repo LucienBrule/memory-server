@@ -1,6 +1,5 @@
-package io.brule.memory.service.memory.impl
+package io.brule.memory.service.memory.impl.qdrant
 
-import io.brule.memory.service.memory.impl.QdrantClientProvider
 import io.brule.memory.config.MemoryConfig
 import io.brule.memory.dto.MemoryRecallRequest
 import io.brule.memory.dto.MemoryRecallResponse
@@ -46,7 +45,6 @@ class QdrantMemoryServiceImpl(
                 filter = QdrantFilter.fromRequest(request)
             )
         }
-        logger.info("grpcRequest: $grpcRequest")
         return if (request.memory.metadata.tags.isEmpty()) {
             val searchResponse = points.search(grpcRequest as SearchPoints)
             MemoryResponseMapper.fromSearchResponse(searchResponse, request.page, request.pageSize)

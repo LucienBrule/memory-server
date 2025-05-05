@@ -4,7 +4,7 @@ import io.brule.memory.dto.MemoryRecallRequest
 import io.brule.memory.dto.MemoryRecallResponse
 import io.brule.memory.dto.MemoryRememberRequest
 import io.brule.memory.dto.MemoryRememberResponse
-import io.brule.memory.service.memory.impl.QdrantClientProvider
+import io.brule.memory.service.memory.impl.qdrant.QdrantClientProvider
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
 import io.quarkiverse.mcp.server.Tool

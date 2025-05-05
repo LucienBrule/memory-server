@@ -1,7 +1,6 @@
-package io.brule.memory.service.memory.impl
+package io.brule.memory.service.memory.impl.qdrant
 
 import io.brule.memory.dto.MemoryRecallRequest
-import qdrant.client.grpc.points.Filter
 import qdrant.client.grpc.points.condition
 import qdrant.client.grpc.points.fieldCondition
 import qdrant.client.grpc.points.filter
