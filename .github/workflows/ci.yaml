@@ -60,9 +60,9 @@ jobs:
 
       - name: Mirror to Artifact Registry
         run: |
-          docker pull ${{ env.IMAGE_NAME }}
+          docker pull ${{env.IMAGE_NAME}}
           docker tag \
             ghcr.io/lucienbrule/memory-server:${{ github.sha }} \
-            us-central1-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/memory-server-repo/memory-server:${{ github.sha }}
+            us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/memory-server-repo/memory-server:${{ github.sha }}
           docker push \
-            us-central1-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/memory-server-repo/memory-server:${{ github.sha }}
+            us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/memory-server-repo/memory-server:${{ github.sha }}
