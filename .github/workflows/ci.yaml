@@ -33,8 +33,8 @@ jobs:
       - name: Run unit tests
         run: ./gradlew test
 
-      - name: Run integration tests
-        run: ./gradlew intTest
+#      - name: Run integration tests TODO: don't use the openai api key in intTest, create a profile.
+#        run: ./gradlew intTest
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
