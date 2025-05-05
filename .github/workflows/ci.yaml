@@ -55,12 +55,12 @@ jobs:
             -Dquarkus.native.builder-image=graalvm \
             -Dquarkus.package.type=native \
             -Dquarkus.container-image.build=true \
-            -Dquarkus.container-image.image=${{ env.REGISTRY }}/${{ github.repository }}:${{ github.sha }} \
+            -Dquarkus.container-image.image=${{ env.IMAGE_NAME }} \
             -Dquarkus.container-image.push=true
 
       - name: Mirror to Artifact Registry
         run: |
-          docker pull ghcr.io/lucienbrule/memory-server:${{ github.sha }}
+          docker pull ${{ env.IMAGE_NAME }}
           docker tag \
             ghcr.io/lucienbrule/memory-server:${{ github.sha }} \
             us-central1-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/memory-server-repo/memory-server:${{ github.sha }}
