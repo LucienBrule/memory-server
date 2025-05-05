@@ -129,3 +129,12 @@ tasks.processResources {
     // Exclude all .proto files from being copied to resources
     exclude("**/*.proto")
 }
+tasks.named<Test>("intTest") {
+    // make sure we have a native exe before integration tests
+    dependsOn("quarkusBuild")
+    // tell QuarkusIntegrationTest where the native image lives
+    systemProperty(
+        "quarkus.test.native-image.path",
+        "${buildDir}/memory-server-runner"
+    )
+}
