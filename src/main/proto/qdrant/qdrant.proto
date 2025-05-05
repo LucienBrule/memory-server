@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+import "qdrant/collections_service.proto";
+import "qdrant/collections_internal_service.proto";
+import "qdrant/health_check.proto";
+import "qdrant/points_service.proto";
+import "qdrant/points_internal_service.proto";
+import "qdrant/qdrant_internal_service.proto";
+import "qdrant/raft_service.proto";
+import "qdrant/shard_snapshots_service.proto";
+import "qdrant/snapshots_service.proto";
+
+package qdrant;
+option java_multiple_files = true;
+option java_package = "qdrant.client.grpc";
+
+service Qdrant {
+  rpc HealthCheck (HealthCheckRequest) returns (HealthCheckReply) {}
+}
+
+message HealthCheckRequest {}
+
+message HealthCheckReply {
+  string title = 1;
+  string version = 2;
+  optional string commit = 3;
+}
