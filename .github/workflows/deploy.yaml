@@ -3,6 +3,11 @@
 name: Deploy to Cloud Run
 
 on:
+  workflow_run:
+    workflows:
+      - Memory Server CI
+    types:
+      - completed
   workflow_dispatch:
   push:
     branches:
@@ -10,6 +15,7 @@ on:
 
 jobs:
   deploy:
+    if: ${{github.event.workflow_run.conclusion == 'success'}}
     name: Deploy Native Container to Cloud Run
     runs-on: ubuntu-latest
 
@@ -17,7 +23,6 @@ jobs:
       contents: read
       id-token: write
 
-    needs: build-and-push
     env:
       PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
       WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
