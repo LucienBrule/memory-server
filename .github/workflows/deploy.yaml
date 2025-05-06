@@ -31,7 +31,7 @@ jobs:
       SERVICE_ACCOUNT_EMAIL: ${{ secrets.GCP_SERVICE_ACCOUNT }}
       REGION: us-central1
       IMAGE_REGISTRY: us-central1-docker.pkg.dev
-      IMAGE_REPOSITORY: memory-server-repo/memory-server
+      IMAGE_REPOSITORY: daemon-docker/memory-server
 
     steps:
       - name: Checkout triggering commit
