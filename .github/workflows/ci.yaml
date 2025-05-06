@@ -14,7 +14,7 @@ permissions:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ghcr.io/lucienbrule/memory-server
-  GCR_REGISTRY: us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}
+  GCR_REGISTRY: us-central1-docker.pkg.dev
   GCR_REPOSITORY: daemon-docker/memory-server
 
 jobs:
@@ -136,10 +136,10 @@ jobs:
 
       - name: Tag and push to GCR (short SHA)
         run: |
-          docker tag ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} ${{ env.GCR_REGISTRY }}/${{ env.GCR_REPOSITORY }}:${{ env.IMAGE_TAG }}
-          docker push ${{ env.GCR_REGISTRY }}/${{ env.GCR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+          docker tag ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} ${{ env.GCR_REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.GCR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+          docker push ${{ env.GCR_REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.GCR_REPOSITORY }}:${{ env.IMAGE_TAG }}
 
       - name: Tag and push to GCR (latest)
         run: |
-          docker tag ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} ${{ env.GCR_REGISTRY }}/${{ env.GCR_REPOSITORY }}:latest
-          docker push ${{ env.GCR_REGISTRY }}/${{ env.GCR_REPOSITORY }}:latest
+          docker tag ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} ${{ env.GCR_REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.GCR_REPOSITORY }}:latest
+          docker push ${{ env.GCR_REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.GCR_REPOSITORY }}:latest
