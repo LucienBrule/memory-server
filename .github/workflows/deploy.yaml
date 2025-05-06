@@ -74,6 +74,6 @@ jobs:
             MEMORY_OPENAI_EMBEDDING_ENCODING_FORMAT=${{ secrets.MEMORY_OPENAI_EMBEDDING_ENCODING_FORMAT }}
             MEMORY_OPENAI_EMBEDDING_MODEL=${{ secrets.MEMORY_OPENAI_EMBEDDING_MODEL }}
           flags: |-
-            --allow-unauthenticated
+            --no-invoker-iam-check
       - name: Capture Cloud Run URL
         run: echo "SERVICE_URL=${{ steps.deploy.outputs.url }}" >> $GITHUB_ENV
