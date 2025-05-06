@@ -22,6 +22,7 @@ interface MemoryConfig {
         fun host(): String
         fun port(): Int
         fun apiKey(): String
+        fun secure(): Boolean
 
         fun vector(): Vector
         interface Vector {
