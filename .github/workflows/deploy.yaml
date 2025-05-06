@@ -1,5 +1,9 @@
 name: Deploy to Cloud Run
 
+concurrency:
+  group: deploy-cloud-run-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   workflow_run:
     workflows:
@@ -7,15 +11,15 @@ on:
     types:
       - completed
   workflow_dispatch:
-  push:
-    branches:
-      - main
 
 jobs:
-  deploy:
+  deploy-cloud-run:
     if: ${{github.event.workflow_run.conclusion == 'success'}}
     name: Deploy Native Container to Cloud Run
     runs-on: ubuntu-latest
+    outputs:
+      service_url: ${{ steps.deploy.outputs.url }}
+      revision: ${{ steps.deploy.outputs.revision }}
 
     permissions:
       contents: read
@@ -30,17 +34,43 @@ jobs:
       IMAGE_REPOSITORY: memory-server-repo/memory-server
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: Calculate short SHA
         run: echo "SHORT_SHA=${GITHUB_SHA::8}" >> $GITHUB_ENV
+      - name: Determine image URI
+        run: echo "IMAGE_URI=${IMAGE_REGISTRY}/${PROJECT_ID}/${IMAGE_REPOSITORY}:${SHORT_SHA}" >> $GITHUB_ENV
       - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v1
+        uses: google-github-actions/auth@v2
         with:
           token_format: 'access_token'
           workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ env.SERVICE_ACCOUNT_EMAIL }}
-      - name: Deploy to Cloud Run
-        uses: google-github-actions/deploy-cloudrun@v1
+          project_id: ${{ env.PROJECT_ID }}
+      - name: Set up Cloud SD se
+        uses: google-github-actions/setup-gcloud@v2
         with:
+          version: '>= 416.0.0'
+      - name: Deploy to Cloud Run
+        id: deploy
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
           service: memory-server
-          region: us-central1
-          image: ${{ env.IMAGE_REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.IMAGE_REPOSITORY }}:${{ env.SHORT_SHA }}
+          region: ${{ env.REGION }}
+          image: ${{ env.IMAGE_URI }}
+          service_account: ${{ env.SERVICE_ACCOUNT_EMAIL }}
+          env_vars: |-
+            MEMORY_QDRANT_HOST=${{ secrets.MEMORY_QDRANT_HOST }}
+            MEMORY_QDRANT_PORT=${{ secrets.MEMORY_QDRANT_PORT }}
+            MEMORY_QDRANT_COLLECTION_NAME=${{ secrets.MEMORY_QDRANT_COLLECTION_NAME }}
+            MEMORY_QDRANT_VECTOR_NAME=${{ secrets.MEMORY_QDRANT_VECTOR_NAME }}
+            MEMORY_QDRANT_VECTOR_SIZE=${{ secrets.MEMORY_QDRANT_VECTOR_SIZE }}
+            MEMORY_OPENAI_API_KEY=${{ secrets.MEMORY_OPENAI_API_KEY }}
+            MEMORY_OPENAI_COMPLETION_MODEL=${{ secrets.MEMORY_OPENAI_COMPLETION_MODEL }}
+            MEMORY_OPENAI_EMBEDDING_ENCODING_FORMAT=${{ secrets.MEMORY_OPENAI_EMBEDDING_ENCODING_FORMAT }}
+            MEMORY_OPENAI_EMBEDDING_MODEL=${{ secrets.MEMORY_OPENAI_EMBEDDING_MODEL }}
+          flags: |-
+            --allow-unauthenticated
+      - name: Capture Cloud Run URL
+        run: echo "SERVICE_URL=${{ steps.deploy.outputs.url }}" >> $GITHUB_ENV

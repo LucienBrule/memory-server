@@ -2,25 +2,26 @@ name: Memory Server CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 permissions:
-  contents: read
-  packages: write
+  contents: 'read'
+  packages: 'write'
+  id-token: 'write'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ghcr.io/lucienbrule/memory-server
+  GCR_REGISTRY: us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}
+  GCR_REPOSITORY: memory-server-repo/memory-server
 
 jobs:
-  build-and-push:
-    name: Build, Test, Native, and Push Image
+  # Lint, Unit and Mapper Tests
+  test:
+    name: Run Tests
     runs-on: ubuntu-latest
-
-    env:
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      REGISTRY: ghcr.io
-      IMAGE_NAME: ghcr.io/lucienbrule/memory-server
-      GCR_REGISTRY: us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}
-      GCR_REPOSITORY: memory-server-repo/memory-server
 
     steps:
       - name: Checkout repository
@@ -39,8 +40,32 @@ jobs:
       - name: Run unit tests
         run: ./gradlew test
 
-      #      - name: Run integration tests TODO: don't use the openai api key in intTest, create a profile.
-      #        run: ./gradlew intTest
+# INT TESTS DISABLED
+#      - name: Run integration tests
+#        run: ./gradlew intTest
+
+  # Build and publish to GHCR
+  build-and-publish:
+    name: Build Native Image & Publish to GHCR
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'graalvm'
+          cache: 'gradle'
+
+      - name: Grant execute permission to Gradle wrapper
+        run: chmod +x ./gradlew
+
+      - name: Set IMAGE_TAG
+        run: echo "IMAGE_TAG=${GITHUB_SHA:0:8}" >> $GITHUB_ENV
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -49,53 +74,63 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Authenticate to GCP
-        uses: google-github-actions/auth@v1
-        with:
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-
-      - name: Install & configure gcloud
-        uses: google-github-actions/setup-gcloud@v1
-        with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-          install_components: docker-credential-gcr
-
-      - name: Configure Docker for Artifact Registry
-        run: |
-          gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
-
-      - name: Set up IMAGE_TAG
-        shell: bash
-        run: echo "IMAGE_TAG=${GITHUB_SHA:0:8}" >> $GITHUB_ENV
-
-      - name: Build native container image with Docker
+      - name: Build native container image
         run: |
           ./gradlew build \
+            -x test \
             -Dquarkus.native.enabled=true \
             -Dquarkus.native.container-build=true \
             -Dquarkus.native.builder-image=graalvm \
             -Dquarkus.package.type=native \
             -Dquarkus.container-image.build=true \
-            -Dquarkus.container-image.image=${{env.IMAGE_NAME}}:${{env.IMAGE_TAG}} \
+            -Dquarkus.container-image.registry=${REGISTRY} \
+            -Dquarkus.container-image.group=${{ github.repository_owner }} \
+            -Dquarkus.container-image.name=memory-server \
+            -Dquarkus.container-image.tag=${IMAGE_TAG} \
             -Dquarkus.container-image.additional-tags=latest \
             -Dquarkus.container-image.push=true
 
-      - name: Mirror to Artifact Registry
+  # Mirror to GCP Artifact Registry
+  mirror-to-gcp:
+    name: Mirror GHCR Image to Artifact Registry
+    runs-on: ubuntu-latest
+    needs: build-and-publish
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          install_components: docker-credential-gcr
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.GCR_REGISTRY }} --quiet
+
+      - name: Pull GHCR image
+        run: docker pull ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+
+      - name: Tag and push to GCR (short SHA)
         run: |
-          # Pull the GHCR image by shor-SHA
-          docker pull ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          docker tag ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} ${{ env.GCR_REGISTRY }}/${{ env.GCR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+          docker push ${{ env.GCR_REGISTRY }}/${{ env.GCR_REPOSITORY }}:${{ env.IMAGE_TAG }}
 
-          # Tag & push short-SHA into Artifact Registry
-          docker tag \
-            ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} \
-            ${{ env.GCR_REGISTRY }}/${{ env.GCR_REPOSITORY }}:${{ env.IMAGE_TAG }}
-          docker push \
-            ${{ env.GCR_REGISTRY }}/${{ env.GCR_REPOSITORY }}:${{ env.IMAGE_TAG }}
-
-          # Also tag & push as latest
-          docker tag \
-            ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} \
-            ${{ env.GCR_REGISTRY }}/${{ env.GCR_REPOSITORY }}:latest
-          docker push \
-            ${{ env.GCR_REGISTRY }}/${{ env.GCR_REPOSITORY }}:latest
+      - name: Tag and push to GCR (latest)
+        run: |
+          docker tag ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} ${{ env.GCR_REGISTRY }}/${{ env.GCR_REPOSITORY }}:latest
+          docker push ${{ env.GCR_REGISTRY }}/${{ env.GCR_REPOSITORY }}:latest
