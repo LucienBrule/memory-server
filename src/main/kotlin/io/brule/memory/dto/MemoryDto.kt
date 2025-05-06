@@ -1,5 +1,6 @@
 package io.brule.memory.dto
 
+import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
@@ -51,9 +52,10 @@ data class MemoryMetadataDto(
 /**
  * Core memory data structure with content and metadata.
  */
-data class MemoryDto(
+data class MemoryDto @JsonCreator constructor(
     @JsonProperty("content")
     val content: String,
+
     @JsonProperty("metadata")
     val metadata: MemoryMetadataDto = MemoryMetadataDto()
 )
