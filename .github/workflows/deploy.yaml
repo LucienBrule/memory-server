@@ -34,8 +34,10 @@ jobs:
       IMAGE_REPOSITORY: memory-server-repo/memory-server
 
     steps:
-      - name: Checkout repository
+      - name: Checkout triggering commit
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
       - name: Calculate short SHA
         run: echo "SHORT_SHA=${GITHUB_SHA::8}" >> $GITHUB_ENV
       - name: Determine image URI

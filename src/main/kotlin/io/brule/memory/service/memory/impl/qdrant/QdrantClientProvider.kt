@@ -1,6 +1,7 @@
 package io.brule.memory.service.memory.impl.qdrant
 
 import io.brule.memory.config.MemoryConfig
+import io.grpc.ClientInterceptors
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import jakarta.enterprise.context.ApplicationScoped
@@ -8,6 +9,7 @@ import jakarta.enterprise.inject.Produces
 import qdrant.client.grpc.QdrantGrpc
 import qdrant.client.grpc.collections.CollectionsGrpc
 import qdrant.client.grpc.points.service.PointsGrpc
+import io.brule.memory.service.memory.impl.qdrant.QdrantApiKeyInterceptor
 
 @ApplicationScoped
 class QdrantClientProvider(
@@ -22,13 +24,13 @@ class QdrantClientProvider(
 
     @Produces
     fun qdrantBlockingStub(channel: ManagedChannel): QdrantGrpc.QdrantBlockingStub =
-        QdrantGrpc.newBlockingStub(channel)
+        QdrantGrpc.newBlockingStub(ClientInterceptors.intercept(channel, QdrantApiKeyInterceptor(config.qdrant().apiKey())))
 
     @Produces
     fun pointsClient(channel: ManagedChannel): PointsGrpc.PointsBlockingStub =
-        PointsGrpc.newBlockingStub(channel)
+        PointsGrpc.newBlockingStub(ClientInterceptors.intercept(channel, QdrantApiKeyInterceptor(config.qdrant().apiKey())))
 
     @Produces
     fun collectionsClient(channel: ManagedChannel): CollectionsGrpc.CollectionsBlockingStub =
-        CollectionsGrpc.newBlockingStub(channel)
+        CollectionsGrpc.newBlockingStub(ClientInterceptors.intercept(channel, QdrantApiKeyInterceptor(config.qdrant().apiKey())))
 }
