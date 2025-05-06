@@ -7,13 +7,7 @@ import io.quarkus.runtime.StartupEvent
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.event.Observes
 import org.jboss.logging.Logger
-import qdrant.client.grpc.collections.CollectionsGrpc
-import qdrant.client.grpc.collections.CreateCollection
-import qdrant.client.grpc.collections.Distance
-import qdrant.client.grpc.collections.HnswConfigDiff
-import qdrant.client.grpc.collections.VectorParams
-import qdrant.client.grpc.collections.VectorParamsMap
-import qdrant.client.grpc.collections.VectorsConfig
+import qdrant.client.grpc.collections.*
 
 @ApplicationScoped
 class QdrantCollectionInitializer(
@@ -23,44 +17,68 @@ class QdrantCollectionInitializer(
 ) {
 
     fun onStart(@Observes event: StartupEvent) {
-        logger.info("Initializing Qdrant collection ${config.qdrant().collectionName()}")
         val collectionName = config.qdrant().collectionName()
-        try {
-            createCollection(collectionName)
-//            collections.collectionExists(
-//                CollectionExistsRequest.newBuilder().setCollectionName(collectionName).build()
-//            )
-            logger.info("Qdrant collection $collectionName already exists")
-            return
-        } catch (e: StatusRuntimeException) {
-            if (e.status.code == Status.Code.NOT_FOUND) {
-                logger.info("Creating Qdrant collection $collectionName")
+        logger.info("""
+            🧠 Initializing Qdrant collection
+            - Name: $collectionName
+            - Host: ${config.qdrant().host()}
+            - Secure: ${config.qdrant().secure()}
+            - Vector: ${config.qdrant().vector().name()} (${config.qdrant().vector().size()} dims)
+        """.trimIndent())
+
+        when (checkCollectionStatus(collectionName)) {
+            CollectionStatus.NOT_FOUND -> {
+                logger.info("Collection not found. Creating new collection: $collectionName")
                 createCollection(collectionName)
-                logger.info("Qdrant collection $collectionName created")
-            } else if(e.status.code == Status.Code.ALREADY_EXISTS){
-                logger.info("Qdrant collection $collectionName already exists")
+                logger.info("Collection $collectionName created successfully.")
             }
-            else {
-                logger.error("Error checking Qdrant collection $collectionName", e)
-                throw e
+            CollectionStatus.EXISTS -> {
+                logger.info("Collection $collectionName already exists.")
+            }
+            is CollectionStatus.Failure -> {
+                logger.error("Failed to check or create collection: ${collectionName}", (checkCollectionStatus(collectionName) as CollectionStatus.Failure).cause)
+                throw (checkCollectionStatus(collectionName) as CollectionStatus.Failure).cause
             }
         }
     }
 
-    fun createCollection(collectionName: String) {
-        collections.create(
-            CreateCollection.newBuilder().setCollectionName(collectionName).setVectorsConfig(
-                    VectorsConfig.newBuilder().setParamsMap(
-                            VectorParamsMap.newBuilder().putMap(
-                                    config.qdrant().vector().name(),
-                                    VectorParams.newBuilder().setSize(config.qdrant().vector().size())
-                                        .setDistance(Distance.Cosine).setHnswConfig(
-                                            HnswConfigDiff.newBuilder().setM(16).setEfConstruct(200).build()
-                                        ).build()
-                                )
-                        )
-                ).build()
+    private fun checkCollectionStatus(name: String): CollectionStatus {
+        return try {
+            collections.get(GetCollectionInfoRequest.newBuilder().setCollectionName(name).build())
+            CollectionStatus.EXISTS
+        } catch (e: StatusRuntimeException) {
+            when (e.status.code) {
+                Status.Code.NOT_FOUND -> CollectionStatus.NOT_FOUND
+                else -> CollectionStatus.Failure(e)
+            }
+        }
+    }
 
-        )
+    private fun createCollection(name: String) {
+        val vectorName = config.qdrant().vector().name()
+        val vectorSize = config.qdrant().vector().size()
+
+        val vectorParams = VectorParams.newBuilder()
+            .setSize(vectorSize)
+            .setDistance(Distance.Cosine)
+            .setHnswConfig(HnswConfigDiff.newBuilder().setM(16).setEfConstruct(200))
+            .build()
+
+        val vectorsConfig = VectorsConfig.newBuilder()
+            .setParamsMap(VectorParamsMap.newBuilder().putMap(vectorName, vectorParams))
+            .build()
+
+        val request = CreateCollection.newBuilder()
+            .setCollectionName(name)
+            .setVectorsConfig(vectorsConfig)
+            .build()
+
+        collections.create(request)
+    }
+
+    private sealed class CollectionStatus {
+        object EXISTS : CollectionStatus()
+        object NOT_FOUND : CollectionStatus()
+        data class Failure(val cause: Throwable) : CollectionStatus()
     }
 }
