@@ -21,6 +21,7 @@ interface MemoryConfig {
     interface Qdrant {
         fun host(): String
         fun port(): Int
+        fun apiKey(): String
 
         fun vector(): Vector
         interface Vector {
