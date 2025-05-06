@@ -49,6 +49,8 @@ jobs:
     name: Build Native Image & Publish to GHCR
     runs-on: ubuntu-latest
     needs: test
+    outputs:
+      image-tag: ${{ steps.set-image-tag.outputs.IMAGE_TAG }}
 
     steps:
       - name: Checkout repository
@@ -65,7 +67,8 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Set IMAGE_TAG
-        run: echo "IMAGE_TAG=${GITHUB_SHA:0:8}" >> $GITHUB_ENV
+        id: set-image-tag
+        run: echo "::set-output name=IMAGE_TAG::${GITHUB_SHA::8}"
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -95,6 +98,8 @@ jobs:
     name: Mirror GHCR Image to Artifact Registry
     runs-on: ubuntu-latest
     needs: build-and-publish
+    env:
+      IMAGE_TAG: ${{ needs.build-and-publish.outputs.image-tag }}
 
     steps:
       - name: Checkout repository

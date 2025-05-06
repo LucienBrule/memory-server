@@ -47,7 +47,7 @@ jobs:
           workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ env.SERVICE_ACCOUNT_EMAIL }}
           project_id: ${{ env.PROJECT_ID }}
-      - name: Set up Cloud SD se
+      - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
         with:
           version: '>= 416.0.0'
@@ -63,6 +63,7 @@ jobs:
           env_vars: |-
             MEMORY_QDRANT_HOST=${{ secrets.MEMORY_QDRANT_HOST }}
             MEMORY_QDRANT_PORT=${{ secrets.MEMORY_QDRANT_PORT }}
+            MEMORY_QDRANT_API_KEY=${{ secrets.MEMORY_QDRANT_API_KEY }}
             MEMORY_QDRANT_COLLECTION_NAME=${{ secrets.MEMORY_QDRANT_COLLECTION_NAME }}
             MEMORY_QDRANT_VECTOR_NAME=${{ secrets.MEMORY_QDRANT_VECTOR_NAME }}
             MEMORY_QDRANT_VECTOR_SIZE=${{ secrets.MEMORY_QDRANT_VECTOR_SIZE }}
