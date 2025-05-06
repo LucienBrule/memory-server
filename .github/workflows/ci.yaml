@@ -80,7 +80,8 @@ jobs:
       - name: Build native container image
         run: |
           ./gradlew build \
-            -x test \
+            --info --stacktrace \
+            -x test x intTest\
             -Dquarkus.native.enabled=true \
             -Dquarkus.native.container-build=true \
             -Dquarkus.native.builder-image=graalvm \
