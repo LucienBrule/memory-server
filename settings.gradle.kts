@@ -17,3 +17,5 @@ rootProject.name = "memory-server"
 include("memory-server")
 include("memory-cli")
 include("memory-lib")
+include("memory-proxy")
+include("memory-core")

@@ -3,7 +3,6 @@ package io.brule.memory.command
 import io.brule.memory.api.MemoryApi
 import io.brule.memory.api.MemoryDto
 import io.brule.memory.api.MemoryRecallRequest
-import jakarta.inject.Inject
 import picocli.CommandLine
 
 @CommandLine.Command(name = "recall", description = ["Recall memories by content"])

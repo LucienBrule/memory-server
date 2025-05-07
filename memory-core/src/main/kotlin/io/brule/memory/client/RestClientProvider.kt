@@ -6,7 +6,6 @@ import io.quarkus.rest.client.reactive.QuarkusRestClientBuilder
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.inject.Produces
 import jakarta.inject.Inject
-import org.jboss.logmanager.Logger
 import java.net.URI
 
 @ApplicationScoped

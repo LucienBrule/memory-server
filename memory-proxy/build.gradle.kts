@@ -32,6 +32,7 @@ repositories {
 dependencies {
     implementation(project(":memory-lib"))
     implementation(project(":memory-core"))
+
     implementation(enforcedPlatform("$quarkusPlatformGroupId:$quarkusPlatformArtifactId:$quarkusPlatformVersion"))
     implementation("io.quarkus:quarkus-kotlin")
     implementation("io.quarkus:quarkus-arc")
@@ -129,7 +130,7 @@ allOpen {
 }
 
 quarkus{
-    setFinalName("memory-cli")
+    setFinalName("memory-proxy")
 }
 
 tasks.processResources {

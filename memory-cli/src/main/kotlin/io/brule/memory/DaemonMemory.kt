@@ -5,7 +5,6 @@ import io.brule.memory.command.CreateCommand
 import io.brule.memory.command.ProxyCommand
 import io.brule.memory.command.RecallCommand
 import io.brule.memory.config.MemoryConfig
-import io.brule.memory.config.MemoryConfigProducer
 import io.brule.memory.util.VersionProvider
 import io.quarkus.picocli.runtime.annotations.TopCommand
 import io.quarkus.runtime.QuarkusApplication
