@@ -13,3 +13,7 @@ pluginManagement {
 }
 
 rootProject.name = "memory-server"
+
+include("memory-server")
+include("memory-cli")
+include("memory-lib")
