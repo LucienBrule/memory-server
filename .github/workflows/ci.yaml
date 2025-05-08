@@ -18,16 +18,32 @@ env:
   GCR_REPOSITORY: daemon-docker/memory-server
 
 jobs:
-  # Lint, Unit and Mapper Tests
+  # 1) Run unit tests per module
   test:
-    name: Run Tests
+    name: Test ${{ matrix.module }}
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module:
+          - memory-cli
+          - memory-core
+          - memory-lib
+          - memory-proxy
+          - memory-server
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Cache Gradle
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+
+      - name: Set up JDK 21 (GraalVM)
         uses: actions/setup-java@v4
         with:
           java-version: '21'
@@ -37,18 +53,53 @@ jobs:
       - name: Grant execute permission to Gradle wrapper
         run: chmod +x ./gradlew
 
-      - name: Run unit tests
-        run: ./gradlew test
+      - name: Run tests for ${{ matrix.module }}
+        run: ./gradlew :${{ matrix.module }}:test
 
-# INT TESTS DISABLED
-#      - name: Run integration tests
-#        run: ./gradlew intTest
+  # 2) Build each module (skip tests)
+  build-modules:
+    name: Build ${{ matrix.module }}
+    runs-on: ubuntu-latest
+    needs: test
+    strategy:
+      matrix:
+        module:
+          - memory-cli
+          - memory-core
+          - memory-lib
+          - memory-proxy
+          - memory-server
 
-  # Build and publish to GHCR
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache Gradle
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+
+      - name: Set up JDK 21 (GraalVM)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'graalvm'
+          cache: 'gradle'
+
+      - name: Grant execute permission to Gradle wrapper
+        run: chmod +x ./gradlew
+
+      - name: Build ${{ matrix.module }}
+        run: ./gradlew :${{ matrix.module }}:build -x test
+
+  # 3) Build & publish native container for memory-server
   build-and-publish:
     name: Build Native Image & Publish to GHCR
     runs-on: ubuntu-latest
-    needs: test
+    needs: build-modules
     outputs:
       image-tag: ${{ steps.set-image-tag.outputs.IMAGE_TAG }}
 
@@ -56,7 +107,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Cache Gradle
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+
+      - name: Set up JDK 21 (GraalVM)
         uses: actions/setup-java@v4
         with:
           java-version: '21'
@@ -80,20 +139,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build native container image
+      - name: Build native image & container for memory-server
         run: |
           ./gradlew build \
             --info --stacktrace \
-            -x test -x intTest\
+            -x test -x intTest \
             -Dquarkus.native.enabled=true \
-            -Dquarkus.native.container-build=true \
-            -Dquarkus.native.builder-image=graalvm \
-            -Dquarkus.package.type=native \
+            -Dquarkus.package.jar.enabled=false \
             -Dquarkus.container-image.build=true \
             -Dquarkus.container-image.registry=${REGISTRY} \
             -Dquarkus.container-image.group=${{ github.repository_owner }} \
             -Dquarkus.container-image.name=memory-server \
-            -Dquarkus.container-image.tag=${IMAGE_TAG} \
+            -Dquarkus.container-image.tag=${{ env.IMAGE_TAG }} \
             -Dquarkus.container-image.additional-tags=latest \
             -Dquarkus.container-image.push=true
 
@@ -143,3 +200,59 @@ jobs:
         run: |
           docker tag ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} ${{ env.GCR_REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.GCR_REPOSITORY }}:latest
           docker push ${{ env.GCR_REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.GCR_REPOSITORY }}:latest
+  # 5) Create a GitHub Release for native binaries
+  release:
+    name: Create native-binaries release
+    runs-on: ubuntu-latest
+    needs: build-modules
+    steps:
+      - name: Create GitHub Release
+        id: make_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: native-binaries-${{ github.sha }}
+          release_name: Native binaries ${{ github.sha }}
+    outputs:
+      upload_url: ${{ steps.make_release.outputs.upload_url }}
+
+  # 6) Build & upload native binaries (Linux + macOS, all three modules)
+  release-binaries:
+    name: Upload native binaries
+    runs-on: ${{ matrix.os }}
+    needs:
+      - build-modules
+      - release
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        module: [memory-cli, memory-proxy, memory-server]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (GraalVM)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'graalvm'
+
+      - name: Grant execute permission to Gradle wrapper
+        run: chmod +x ./gradlew
+
+      - name: Build ${{ matrix.module }} native
+        run: |
+          ./gradlew :${{ matrix.module }}:build \
+            -x test -x intTest \
+            -Dquarkus.native.enabled=true \
+            -Dquarkus.package.jar.enabled=false
+
+      - name: Upload ${{ matrix.module }} binary
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ needs.release.outputs.upload_url }}
+          asset_path: ${{ matrix.module }}/build/${{ matrix.module }}-runner
+          asset_name: ${{ matrix.module }}-${{ matrix.os }}-${{ github.sha }}
+          asset_content_type: application/octet-stream
