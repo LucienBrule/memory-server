@@ -5,7 +5,6 @@ import io.brule.memory.api.MemoryDto
 import io.brule.memory.api.MemoryMetadataDto
 import io.brule.memory.api.MemoryRememberRequest
 import io.brule.memory.api.MemoryTagDto
-import jakarta.inject.Inject
 import picocli.CommandLine
 
 @CommandLine.Command(name = "create", description = ["Create and store a new memory"])

@@ -36,12 +36,11 @@ dependencies {
     implementation(enforcedPlatform("$quarkusPlatformGroupId:$quarkusPlatformArtifactId:$quarkusPlatformVersion"))
     implementation("io.quarkus:quarkus-kotlin")
     implementation("io.quarkus:quarkus-arc")
-    implementation("com.google.protobuf:protobuf-kotlin")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("io.quarkus:quarkus-rest-client-jackson")
-    implementation("io.quarkus:quarkus-container-image-docker")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-    implementation("io.quarkus:quarkus-picocli")
+    implementation("io.quarkiverse.mcp:quarkus-mcp-server-stdio:1.1.0")
+
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 
     implementation("com.akuleshov7:ktoml-core:0.6.0")
     implementation("com.akuleshov7:ktoml-file:0.6.0")
