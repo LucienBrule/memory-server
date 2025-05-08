@@ -48,14 +48,14 @@ jobs:
       - name: Rename runner with version & arch
         run: |
           SRC="${{ matrix.module }}/build/${{ matrix.module }}-runner"
-          DST="${{ matrix.module }}/build/${{ matrix.module }}-${VERSION}-${PLATFORM}"
+          DST="${{ matrix.module }}/build/${{ matrix.module }}-${{env.VERSION}}-${{env.PLATFORM}}"
           mv "$SRC" "$DST"
 
       - name: Upload runner as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.module }}-${{ PLATFORM }}
-          path: ${{ matrix.module }}/build/${{ matrix.module }}-${VERSION}-${PLATFORM}
+          name: ${{ matrix.module }}-${{env.PLATFORM}}
+          path: ${{ matrix.module }}/build/${{ matrix.module }}-${{env.VERSION}}-${{env.PLATFORM}}
 
   publish:
     needs: build-and-upload
