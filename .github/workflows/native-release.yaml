@@ -39,7 +39,7 @@ jobs:
       - name: Upload runner as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.module }}-${{ matrix.os }}
+          name: ${{ matrix.module }}-${{github.ref_name}}-${{ matrix.os }}
           path: ${{ matrix.module }}/build/${{ matrix.module }}-runner
 
   publish:
@@ -52,16 +52,11 @@ jobs:
       - name: Download all runners
         uses: actions/download-artifact@v4
         with:
-          path: ./runners
+          path: runners
+          merge-multiple: true
 
       - name: Create Release & upload binaries
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ github.ref_name }}
-          artifacts: |
-            runners/memory-cli-ubuntu-latest-runner,
-            runners/memory-cli-macos-latest-runner,
-            runners/memory-proxy-ubuntu-latest-runner,
-            runners/memory-proxy-macos-latest-runner,
-            runners/memory-server-ubuntu-latest-runner,
-            runners/memory-server-macos-latest-runner
+          artifacts: runners/*
