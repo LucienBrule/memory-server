@@ -1,16 +1,15 @@
-name: Publish Native Binaries
+name: Build & Publish Native Binaries
 
 on:
   push:
-    # only on tags (you can tighten this to v* or whatever)
     tags:
-      - '*'
+      - 'v*'       # only on version tags
 
 permissions:
-  contents: write   # needed to create release and upload artifacts
+  contents: write
 
 jobs:
-  build-and-release:
+  build-and-upload:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -18,7 +17,7 @@ jobs:
         module: [memory-cli, memory-proxy, memory-server]
 
     steps:
-      - name: Checkout repo
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up GraalVM
@@ -27,23 +26,42 @@ jobs:
           java-version: '21'
           distribution: 'graalvm'
 
-      - name: Make Gradle wrapper executable
+      - name: Make Gradle executable
         run: chmod +x ./gradlew
 
-      - name: Build ${{ matrix.module }} native runner
+      - name: Build native runner
         run: |
           ./gradlew :${{ matrix.module }}:build \
             -x test -x intTest \
             -Dquarkus.native.enabled=true \
             -Dquarkus.package.jar.enabled=false
 
-      - name: Create GitHub Release & Upload Artifacts
+      - name: Upload runner as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.module }}-${{ matrix.os }}
+          path: ${{ matrix.module }}/build/${{ matrix.module }}-runner
+
+  publish:
+    needs: build-and-upload
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
+      - name: Download all runners
+        uses: actions/download-artifact@v3
+        with:
+          path: ./runners
+
+      - name: Create Release & upload binaries
         uses: ncipollo/release-action@v1
         with:
-          # Use the pushed tag (e.g. refs/tags/vX.Y.Z) to name the release
           tag: ${{ github.ref_name }}
-          # globs relative to repo root; comma-delimited
           artifacts: |
-            memory-cli/build/memory-cli-runner,
-            memory-proxy/build/memory-proxy-runner,
-            memory-server/build/memory-server-runner
+            runners/memory-cli-ubuntu-latest-runner,
+            runners/memory-cli-macos-latest-runner,
+            runners/memory-proxy-ubuntu-latest-runner,
+            runners/memory-proxy-macos-latest-runner,
+            runners/memory-server-ubuntu-latest-runner,
+            runners/memory-server-macos-latest-runner
