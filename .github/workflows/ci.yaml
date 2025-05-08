@@ -141,7 +141,7 @@ jobs:
 
       - name: Build native image & container for memory-server
         run: |
-          ./gradlew build \
+          ./gradlew :memory-server:build \
             --info --stacktrace \
             -x test -x intTest \
             -Dquarkus.native.enabled=true \
@@ -200,59 +200,3 @@ jobs:
         run: |
           docker tag ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} ${{ env.GCR_REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.GCR_REPOSITORY }}:latest
           docker push ${{ env.GCR_REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/${{ env.GCR_REPOSITORY }}:latest
-  # 5) Create a GitHub Release for native binaries
-  release:
-    name: Create native-binaries release
-    runs-on: ubuntu-latest
-    needs: build-modules
-    steps:
-      - name: Create GitHub Release
-        id: make_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: native-binaries-${{ github.sha }}
-          release_name: Native binaries ${{ github.sha }}
-    outputs:
-      upload_url: ${{ steps.make_release.outputs.upload_url }}
-
-  # 6) Build & upload native binaries (Linux + macOS, all three modules)
-  release-binaries:
-    name: Upload native binaries
-    runs-on: ${{ matrix.os }}
-    needs:
-      - build-modules
-      - release
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-        module: [memory-cli, memory-proxy, memory-server]
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 21 (GraalVM)
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'graalvm'
-
-      - name: Grant execute permission to Gradle wrapper
-        run: chmod +x ./gradlew
-
-      - name: Build ${{ matrix.module }} native
-        run: |
-          ./gradlew :${{ matrix.module }}:build \
-            -x test -x intTest \
-            -Dquarkus.native.enabled=true \
-            -Dquarkus.package.jar.enabled=false
-
-      - name: Upload ${{ matrix.module }} binary
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ needs.release.outputs.upload_url }}
-          asset_path: ${{ matrix.module }}/build/${{ matrix.module }}-runner
-          asset_name: ${{ matrix.module }}-${{ matrix.os }}-${{ github.sha }}
-          asset_content_type: application/octet-stream

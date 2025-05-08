@@ -1,0 +1,49 @@
+name: Publish Native Binaries
+
+on:
+  push:
+    # only on tags (you can tighten this to v* or whatever)
+    tags:
+      - '*'
+
+permissions:
+  contents: write   # needed to create release and upload artifacts
+
+jobs:
+  build-and-release:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        module: [memory-cli, memory-proxy, memory-server]
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up GraalVM
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'graalvm'
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: Build ${{ matrix.module }} native runner
+        run: |
+          ./gradlew :${{ matrix.module }}:build \
+            -x test -x intTest \
+            -Dquarkus.native.enabled=true \
+            -Dquarkus.package.jar.enabled=false
+
+      - name: Create GitHub Release & Upload Artifacts
+        uses: ncipollo/release-action@v1
+        with:
+          # Use the pushed tag (e.g. refs/tags/vX.Y.Z) to name the release
+          tag: ${{ github.ref_name }}
+          # globs relative to repo root; comma-delimited
+          artifacts: |
+            memory-cli/build/memory-cli-runner,
+            memory-proxy/build/memory-proxy-runner,
+            memory-server/build/memory-server-runner
