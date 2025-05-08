@@ -37,7 +37,7 @@ jobs:
             -Dquarkus.package.jar.enabled=false
 
       - name: Upload runner as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.module }}-${{ matrix.os }}
           path: ${{ matrix.module }}/build/${{ matrix.module }}-runner
@@ -48,9 +48,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        
+
       - name: Download all runners
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: ./runners
 
