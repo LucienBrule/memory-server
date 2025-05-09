@@ -1,0 +1,31 @@
+version: 1.0.1
+title: Memory QA for v0.1.1
+description: >
+  A guided QA session for validating memory-store functionality using Goose.
+  Tests semantic storage, recall, pagination, and robustness to edge cases.
+instructions: >
+  1. Confirm memory tools are available via the loaded extension.
+  2. Store at least 3 test memories using `remember` with varied tags.
+  3. Recall with vague or indirect content queries (no tags initially).
+  4. Validate pagination edge behavior: test page=0 and page=1 with pageSize=1.
+  5. Trigger a fallback recall scenario using tags that may not exist.
+  6. Provide an NPS score and any feedback or bugs.
+extensions:
+  - type: builtin
+    name: developer
+    display_name: Developer
+    timeout: 300
+    bundled: true
+activities:
+  - Confirm memory tool visibility
+  - Store QA-labeled test memories
+  - Validate semantic recall accuracy
+  - Trigger recall fallback for missing tag index
+  - Exercise pagination quirks
+  - Submit UX rating and feedback
+author:
+  contact: developer
+metadata:
+  target_version: v0.1.1
+  interface_type: memory-proxy (STDIO)
+  goose_model: anthropic/claude-3.5
