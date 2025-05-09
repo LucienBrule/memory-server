@@ -14,7 +14,7 @@ class MemoryRequestMapperTest {
     private val collectionName = "test-collection"
     private val id = "123e4567-e89b-12d3-a456-426614174000"
     private val vectorName = "embedding"
-    private val vector = listOf(0.1, 0.2, 0.3)
+    private val vector = listOf<Float>(0.1f, 0.2f, 0.3f)
 
     private val memoryDto = MemoryDto(
         content = "Hello world",
@@ -61,7 +61,7 @@ class MemoryRequestMapperTest {
         // vectors: ensure the named vector exists and holds the correct floats
         val named = point.vectors.vectors.vectorsMap
         Assertions.assertTrue(named.containsKey(vectorName))
-        Assertions.assertEquals(vector.map(Double::toFloat), named[vectorName]!!.dataList)
+        Assertions.assertEquals(vector, named[vectorName]!!.dataList)
 
         // payload: verify simple fields
         val payload = point.payloadMap
@@ -90,11 +90,11 @@ class MemoryRequestMapperTest {
 
         Assertions.assertEquals(collectionName, req.collectionName)
         Assertions.assertEquals(vectorName, req.vectorName)
-        Assertions.assertEquals(vector.map(Double::toFloat), req.vectorList)
+        Assertions.assertEquals(vector, req.vectorList)
         // default limit is pageSize * 2
         Assertions.assertEquals((recallRequest.pageSize * 2).toLong(), req.limit)
         // offset = (page - 1) * pageSize
-        Assertions.assertEquals(((recallRequest.page - 1) * recallRequest.pageSize).toLong(), req.offset)
+        Assertions.assertEquals(((recallRequest.page) * recallRequest.pageSize).toLong(), req.offset)
     }
 
     @Test

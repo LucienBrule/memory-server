@@ -18,12 +18,12 @@ class TestMiniLMEmbedService: EmbedService {
 
     private val logger: Logger = Logger.getLogger(TestMiniLMEmbedService::class.java)
     private val model = AllMiniLmL6V2QuantizedEmbeddingModel()
-    override fun embed(content: String): List<Double> {
+    override fun embed(content: String): List<Float> {
         logger.debug("TestMiniLMEmbedService generating embedding for: \"$content\"")
         val embeddingResult = model.embed(content)
         // Extract the raw float array from the model's output
         val floatVector = embeddingResult.content().vector()
         // Convert float values to Double
-        return floatVector.map { it.toDouble() }
+        return floatVector.map { it }
     }
 }

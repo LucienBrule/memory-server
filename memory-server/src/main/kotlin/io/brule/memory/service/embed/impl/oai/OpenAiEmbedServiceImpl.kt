@@ -13,7 +13,7 @@ class OpenAiEmbedServiceImpl(
     @RestClient private val client: OpenAiEmbeddingClient,
     private val config: MemoryConfig
 ) : EmbedService {
-    override fun embed(content: String): List<Double> {
+    override fun embed(content: String): List<Float> {
         val embedResponse = client.embed(
             OpenAiEmbeddingRequest(
                 model = config.openai().embedding().model(),

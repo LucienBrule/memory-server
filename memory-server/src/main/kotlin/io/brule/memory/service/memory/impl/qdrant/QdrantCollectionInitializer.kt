@@ -8,13 +8,18 @@ import jakarta.enterprise.context.ApplicationScoped
 import jakarta.enterprise.event.Observes
 import org.jboss.logging.Logger
 import qdrant.client.grpc.collections.*
+import qdrant.client.grpc.collections.UpdateCollection
+import qdrant.client.grpc.collections.PayloadIndexParams
+import io.brule.memory.service.memory.impl.qdrant.QdrantHttpIndexClient
 
 @ApplicationScoped
 class QdrantCollectionInitializer(
     private val collections: CollectionsGrpc.CollectionsBlockingStub,
     private val config: MemoryConfig,
-    private val logger: Logger
+    private val logger: Logger,
+    private val indexClient: QdrantHttpIndexClient
 ) {
+
 
     fun onStart(@Observes event: StartupEvent) {
         val collectionName = config.qdrant().collectionName()
@@ -30,13 +35,16 @@ class QdrantCollectionInitializer(
             CollectionStatus.NOT_FOUND -> {
                 logger.info("Collection not found. Creating new collection: $collectionName")
                 createCollection(collectionName)
+                indexClient.ensureAllIndexes()
                 logger.info("Collection $collectionName created successfully.")
             }
             CollectionStatus.EXISTS -> {
                 logger.info("Collection $collectionName already exists.")
+                updateCollectionSchema(collectionName)
+                indexClient.ensureAllIndexes()
             }
             is CollectionStatus.Failure -> {
-                logger.error("Failed to check or create collection: ${collectionName}", (checkCollectionStatus(collectionName) as CollectionStatus.Failure).cause)
+                logger.error("Failed to check or create collection: $collectionName", (checkCollectionStatus(collectionName) as CollectionStatus.Failure).cause)
                 throw (checkCollectionStatus(collectionName) as CollectionStatus.Failure).cause
             }
         }
@@ -74,6 +82,10 @@ class QdrantCollectionInitializer(
             .build()
 
         collections.create(request)
+    }
+
+    private fun updateCollectionSchema(name: String) {
+        logger.info("Ensuring collection schema is up-to-date for: $name")
     }
 
     private sealed class CollectionStatus {

@@ -29,7 +29,7 @@ object MemoryRequestMapper {
         collectionName: String,
         id: String,
         vectorName: String,
-        vector: List<Double>
+        vector: List<Float>
     ): UpsertPoints = upsertPoints {
         // MUST use this.collectionName instead of collectionName because of scope resolution
         this.collectionName = collectionName
@@ -52,7 +52,7 @@ object MemoryRequestMapper {
             this.vectors = vectors {
                 this@vectors.vectors = namedVectors {
                     this@namedVectors.vectors[vectorName] = vector {
-                        data += vector.map(Double::toFloat)
+                        data += vector
                     }
                 }
             }
@@ -69,7 +69,7 @@ object MemoryRequestMapper {
         request: MemoryRecallRequest,
         collectionName: String,
         vectorName: String,
-        vector: List<Double>,
+        vector: List<Float>,
         limit: Int = request.pageSize * 2
     ): SearchPoints = searchPoints {
         // MUST use this.* because of scope resolution
@@ -80,9 +80,9 @@ object MemoryRequestMapper {
         // correct
         this.limit = limit.toLong()
         // correct
-        this.offset = ((request.page - 1) * request.pageSize).toLong()
+        this.offset = (request.page * request.pageSize).toLong()
         // we're missing setting the vector here.
-        vector.forEach { this.vector += it.toFloat() }
+        vector.forEach { this.vector += it }
 
         withPayload = withPayloadSelector {
             enable = true

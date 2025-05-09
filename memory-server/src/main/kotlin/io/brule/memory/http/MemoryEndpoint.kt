@@ -21,7 +21,7 @@ class MemoryEndpoint(
 ):MemoryApi{
 
     override fun remember(request: MemoryRememberRequest): MemoryRememberResponse{
-        logger.info("Received request to /dev/remember")
+        logger.info("Received request to remember")
         logger.info("request is: $request")
 
         val response: MemoryRememberResponse = memory.remember(request)
@@ -31,7 +31,7 @@ class MemoryEndpoint(
     }
 
     override fun recall(request: MemoryRecallRequest): MemoryRecallResponse{
-        logger.info("Received reqeust to /dev/recall")
+        logger.info("Received reqeust to recall")
         logger.info("request is $request")
 
         val response: MemoryRecallResponse = memory.recall(request)

@@ -12,5 +12,5 @@ data class OpenAiEmbeddingResponse(
 )
 
 data class EmbeddingWrapper(
-    val embedding: List<Double>
+    val embedding: List<Float>
 )
