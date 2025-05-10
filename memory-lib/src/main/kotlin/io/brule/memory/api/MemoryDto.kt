@@ -77,7 +77,7 @@ data class MemoryRecallRequest(
     @JsonProperty("exclude")
     val exclude: List<MemoryTagDto> = emptyList(),
     @JsonProperty("page")
-    val page: Int = 1,
+    val page: Int = 0,
     @JsonProperty("pageSize")
     val pageSize: Int = 3
 )
